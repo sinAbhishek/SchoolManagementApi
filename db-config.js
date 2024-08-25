@@ -1,18 +1,20 @@
-import mysql from "mysql";
+import postgres from "postgres";
+import dotenv from "dotenv";
 
-export const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "123456",
-  database: "schoolmanagement",
+dotenv.config();
+
+const connectionString = process.env.DATABASE_URL;
+
+const sql = postgres(connectionString, {
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
-export const queryPromise = (query, values) => {
-  return new Promise((resolve, reject) => {
-    db.query(query, values, (err, result) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(result);
-    });
-  });
+
+export const queryPromise = async (query, values) => {
+  try {
+    return await sql.unsafe(query, values);
+  } catch (err) {
+    throw new Error(`Database query failed: ${err.message}`);
+  }
 };

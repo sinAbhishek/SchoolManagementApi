@@ -1,16 +1,13 @@
 import express from "express";
-import { db } from "./db-config.js";
+import dotenv from "dotenv";
 import schoolroutes from "./routes/school.js";
+
 const app = express();
+dotenv.config();
+const PORT = process.env.PORT || 4000;
 app.use(express.json());
-db.connect((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log("db connected");
-});
 
 app.use("/", schoolroutes);
-app.listen(4000, () => {
+app.listen(PORT, () => {
   "server started";
 });

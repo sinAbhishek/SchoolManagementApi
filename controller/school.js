@@ -9,16 +9,16 @@ export const addSchool = async (req, res) => {
 
   try {
     const query = `
-              INSERT INTO schools (name, address, latitude, longitude)
-              VALUES (?, ?, ?, ?);
-          `;
+      INSERT INTO schools (name, address, latitude, longitude)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id;
+    `;
     const values = [name, address, latitude, longitude];
-
     const result = await queryPromise(query, values);
 
     res.status(201).json({
       message: "School added successfully",
-      schoolId: result.insertId,
+      schoolId: result[0].id,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to add school" });
@@ -34,24 +34,28 @@ export const listSchools = async (req, res) => {
   }
 
   const query = `
-          SELECT 
-              id,
-              name,
-              address,
-              latitude,
-              longitude,
-              (6371 * acos(
-                  cos(radians(?)) * cos(radians(latitude)) * 
-                  cos(radians(longitude) - radians(?)) + 
-                  sin(radians(?)) * sin(radians(latitude))
-              )) AS distance
-          FROM 
-              schools
-          ORDER BY 
-              distance ASC;
-      `;
+      SELECT 
+        id,
+        name,
+        address,
+        latitude,
+        longitude,
+        (6371 * acos(
+          cos(radians($1)) * cos(radians(latitude)) * 
+          cos(radians(longitude) - radians($2)) + 
+          sin(radians($1)) * sin(radians(latitude))
+        )) AS distance
+      FROM 
+        schools
+      ORDER BY 
+        distance ASC;
+    `;
 
-  const results = await queryPromise(query, [latitude, longitude, latitude]);
-  console.log(results);
-  res.json(results);
+  try {
+    const results = await queryPromise(query, [latitude, longitude]);
+    res.json(results);
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ error: "Failed to fetch schools" });
+  }
 };
